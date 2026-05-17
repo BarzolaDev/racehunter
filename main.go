@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func attack(url string, method string, body string, wg *sync.WaitGroup, results chan string) {
+func attack(url string, method string, body string, token string, wg *sync.WaitGroup, results chan string) {
 	defer wg.Done()
 	
 	var req *http.Request
@@ -27,6 +27,10 @@ func attack(url string, method string, body string, wg *sync.WaitGroup, results 
 		results <- "error"
 		return
 	}
+
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer " + token)
+	}
 	
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -41,7 +45,7 @@ func attack(url string, method string, body string, wg *sync.WaitGroup, results 
 
 func main() {
 	if len(os.Args) < 3 {
-		fmt.Println("uso: racehunter <url> <threads> [method] [body]")
+		fmt.Println("uso: racehunter <url> <threads> [method] [body] [token]")
 		return
 	}
 
@@ -49,6 +53,7 @@ func main() {
 	threads, _ := strconv.Atoi(os.Args[2])
 	method := "GET"
 	body := ""
+	token := ""
 	
 	if len(os.Args) >= 4 {
 		method = os.Args[3]
@@ -56,13 +61,16 @@ func main() {
 	if len(os.Args) >= 5 {
 		body = os.Args[4]
 	}
+	if len(os.Args) >= 6 {
+		token = os.Args[5]
+	}
 
 	results := make(chan string, threads)
 	var wg sync.WaitGroup
 
 	for i := 0; i < threads; i++ {
 		wg.Add(1)
-		go attack(url, method, body, &wg, results)
+		go attack(url, method, body, token, &wg, results)
 	}
 
 	wg.Wait()
