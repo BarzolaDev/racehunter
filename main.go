@@ -39,9 +39,9 @@ func attack(url string, method string, body string, token string, wg *sync.WaitG
 		return
 	}
 	defer resp.Body.Close()
-	respBody, _ := io.ReadAll(resp.Body)
-	results <- string(respBody)
-}
+	io.Copy(io.Discard, resp.Body)
+	results <- fmt.Sprintf("%d", resp.StatusCode)
+	}
 
 func main() {
 	if len(os.Args) < 3 {
@@ -82,8 +82,11 @@ func main() {
 	}
 
 	if len(responses) > 1 {
-		fmt.Println("[!] INCONSISTENCIA DETECTADA - posible race condition")
+    fmt.Println("[!] INCONSISTENCIA DETECTADA - posible race condition")
 	} else {
-		fmt.Println("[+] respuestas consistentes")
+    fmt.Println("[+] respuestas consistentes")
+	}
+	for status, count := range responses {
+    fmt.Printf("  %s → %d veces\n", status, count)
 	}
 }
