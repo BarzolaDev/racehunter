@@ -1,8 +1,6 @@
 # RaceHunter
 
-CLI tool written in Go to detect race conditions in HTTP endpoints.
-
-Sends N concurrent requests to the same endpoint and detects inconsistent responses — the signature of a race condition vulnerability.
+CLI tool written in Go to detect race conditions and enumeration vulnerabilities in HTTP endpoints.
 
 ## Why this exists
 
@@ -13,7 +11,11 @@ This tool was built after demonstrating race conditions in a real inventory API:
 - Java: demonstrated the attack with 1000 concurrent threads
 - Go: built the tool to detect it automatically in any system
 
-## Usage
+## Commands
+
+### attack — Race condition detection
+
+Sends N concurrent requests to the same endpoint and detects inconsistent responses.
 
 ```bash
 go build -o racehunter main.go
@@ -23,18 +25,44 @@ go build -o racehunter main.go
 
 # POST with body
 ./racehunter https://target.com/checkout 10 POST '{"product_id":123}'
+
+# Authenticated endpoint
+./racehunter https://target.com/stock 100 POST '{"quantity":-1}' YOUR_TOKEN
 ```
+
+**Output:**
+[!] INCONSISTENCIA DETECTADA - posible race condition
+200 → 95 veces
+400 → 5 veces
+
+### enumerate — Numeric ID enumeration (IDOR)
+
+Iterates numeric IDs and reports which resources exist without authentication.
+
+```bash
+./racehunter enumerate https://target.com/products 1 100
+```
+
+**Output against inventory-api (numeric IDs):**
+[*] Enumerando http://localhost:8000/products del ID 1 al 10...
+[!] ID 1 existe → http://localhost:8000/products/1
+[!] ID 2 existe → http://localhost:8000/products/2
+[!] VULNERABLE — IDs numéricos enumerables. Migrar a UUID.
+
+**Fix:** migrating IDs to UUID eliminates brute-force enumeration.  
+Covered under OWASP A01 — Broken Access Control.
 
 ## How it works
 
+**attack:**
 1. Launches N goroutines simultaneously against the target endpoint
 2. Collects all responses via a channel
-3. Groups responses by content
-4. If responses are inconsistent — race condition detected
+3. If responses are inconsistent — race condition detected
 
-## Output
-[!] INCONSISTENCIA DETECTADA - posible race condition
-[+] respuestas consistentes
+**enumerate:**
+1. Iterates numeric IDs sequentially
+2. Reports every ID that returns 200
+3. Flags the system as vulnerable if any exist
 
 ## Disclaimer
 
