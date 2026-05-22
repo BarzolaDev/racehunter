@@ -16,6 +16,7 @@ This tool was built after demonstrating race conditions in a real inventory API:
 ### attack — Race condition detection
 
 Sends N concurrent requests to the same endpoint and detects inconsistent responses.
+Now parses JSON response bodies to show exactly which fields are inconsistent across concurrent requests.
 
 ```bash
 go build -o racehunter main.go
@@ -31,9 +32,16 @@ go build -o racehunter main.go
 ```
 
 **Output:**
+```
 [!] INCONSISTENCIA DETECTADA - posible race condition
-200 → 95 veces
-400 → 5 veces
+  200 → 95 veces
+  body: stock=1
+  400 → 5 veces
+  body: stock=-1
+
+[!] CAMPOS INCONSISTENTES:
+  campo 'stock': 1 → -1
+```
 
 ### enumerate — Numeric ID enumeration (IDOR)
 
@@ -44,10 +52,12 @@ Iterates numeric IDs and reports which resources exist without authentication.
 ```
 
 **Output against inventory-api (numeric IDs):**
+```
 [*] Enumerando http://localhost:8000/products del ID 1 al 10...
 [!] ID 1 existe → http://localhost:8000/products/1
 [!] ID 2 existe → http://localhost:8000/products/2
 [!] VULNERABLE — IDs numéricos enumerables. Migrar a UUID.
+```
 
 **Fix:** migrating IDs to UUID eliminates brute-force enumeration.  
 Covered under OWASP A01 — Broken Access Control.
@@ -57,7 +67,8 @@ Covered under OWASP A01 — Broken Access Control.
 **attack:**
 1. Launches N goroutines simultaneously against the target endpoint
 2. Collects all responses via a channel
-3. If responses are inconsistent — race condition detected
+3. Parses JSON response bodies and compares field values across responses
+4. If responses are inconsistent — race condition detected with exact field diff
 
 **enumerate:**
 1. Iterates numeric IDs sequentially
