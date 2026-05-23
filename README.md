@@ -16,10 +16,12 @@ Mitigation: Nginx as an additional layer.
 enumerate confirmed all product IDs accessible 
 without authentication.
 
+Every ID exposed. Every resource mapped.
+No authentication required.
+
+This finding revealed a deeper problem:
+the API was returning more information than necessary.
+If they can enumerate it, they can extract it.
+
 Mitigation: UUID migration pending.
-
-### Stock inconsistency under concurrency
-attack confirmed race condition in stock endpoint 
-before SELECT FOR UPDATE was implemented.
-
-stock: 1 → -1 under 100 concurrent requests.
+Longer term: return only what the client needs. Nothing more.
