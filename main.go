@@ -1,14 +1,15 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
-	"os"
-	"strconv"
-	"strings"
-	"sync"
+    "encoding/json"
+    "fmt"
+    "io"
+    "net/http"
+    "os"
+    "strconv"
+    "strings"
+    "sync"
+    "time"
 )
 
 type Result struct {
@@ -39,7 +40,7 @@ func attack(url string, method string, body string, token string, wg *sync.WaitG
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
 
-	client := &http.Client{}
+	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		results <- Result{Status: 0, Body: "error"}
